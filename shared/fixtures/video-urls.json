@@ -1,0 +1,169 @@
+{
+  "_comment": "Fixture URL Facebook dùng chung cho các bài test. Không hardcode URL trong test.",
+  "cases": [
+    {
+      "name": "watch cơ bản",
+      "input": "https://www.facebook.com/watch/?v=1234567890123456",
+      "expectedId": "1234567890123456",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "watch có tham số tracking",
+      "input": "https://www.facebook.com/watch/?v=1234567890123456&ref=share&mibextid=wwXIfr&__cft__[0]=abc",
+      "expectedId": "1234567890123456",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "web.facebook + video.php",
+      "input": "https://web.facebook.com/video.php?v=9876543210987654",
+      "expectedId": "9876543210987654",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "story.php với story_fbid",
+      "input": "https://m.facebook.com/story.php?story_fbid=1111222233334444&id=555666777",
+      "expectedId": "1111222233334444",
+      "expectedKind": "video",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "permalink.php với story_fbid",
+      "input": "https://www.facebook.com/permalink.php?story_fbid=4444555566667777&id=1",
+      "expectedId": "4444555566667777",
+      "expectedKind": "video",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "đường dẫn /videos/ của page",
+      "input": "https://www.facebook.com/somepage/videos/1234567890/",
+      "expectedId": "1234567890",
+      "expectedKind": "video",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "reel",
+      "input": "https://www.facebook.com/reel/1234567890123456/",
+      "expectedId": "1234567890123456",
+      "expectedKind": "reel",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "reels có query",
+      "input": "https://www.facebook.com/reels/9876543210987654?ref=reels",
+      "expectedId": "9876543210987654",
+      "expectedKind": "reel",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "link rút gọn fb.watch",
+      "input": "https://fb.watch/abcDEF123/",
+      "expectedId": "fbwatch:abcDEF123",
+      "expectedKind": "short_link",
+      "expectedResolvedBy": "shortlink"
+    },
+    {
+      "name": "fb.gg",
+      "input": "https://fb.gg/exampleCode/",
+      "expectedId": "fbwatch:exampleCode",
+      "expectedKind": "short_link",
+      "expectedResolvedBy": "shortlink"
+    },
+    {
+      "name": "share/v",
+      "input": "https://www.facebook.com/share/v/16AbCdEfGh/",
+      "expectedId": "share:v:16AbCdEfGh",
+      "expectedKind": "short_link",
+      "expectedResolvedBy": "shortlink"
+    },
+    {
+      "name": "share/r",
+      "input": "https://www.facebook.com/share/r/16AbCdEfGh/",
+      "expectedId": "share:r:16AbCdEfGh",
+      "expectedKind": "short_link",
+      "expectedResolvedBy": "shortlink"
+    },
+    {
+      "name": "link nằm trong câu văn",
+      "input": "Xem video này nhé: https://www.facebook.com/watch/?v=1111111111111111 cảm ơn bạn",
+      "expectedId": "1111111111111111",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "thiếu scheme",
+      "input": "facebook.com/watch/?v=2222222222222222",
+      "expectedId": "2222222222222222",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "có dấu chấm cuối câu",
+      "input": "https://www.facebook.com/watch/?v=3333333333333333.",
+      "expectedId": "3333333333333333",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "chỉ là ID số",
+      "input": "1111111111111111",
+      "expectedId": "1111111111111111",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "v không phải số",
+      "input": "https://www.facebook.com/watch/?v=short",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "domain khác",
+      "input": "https://example.com/watch?v=123",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "chuỗi rỗng",
+      "input": "   ",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "trang chủ Facebook",
+      "input": "https://www.facebook.com/",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "bài viết trong group",
+      "input": "https://www.facebook.com/groups/123/posts/456/",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "link redirect l.facebook.com (chưa hỗ trợ)",
+      "input": "https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.facebook.com%2Fwatch%2F%3Fv%3D555",
+      "expectedKind": "unknown",
+      "expectedResolvedBy": "unknown"
+    },
+    {
+      "name": "mbasic",
+      "input": "https://mbasic.facebook.com/watch/?v=6666777788889999",
+      "expectedId": "6666777788889999",
+      "expectedKind": "watch",
+      "expectedResolvedBy": "url"
+    },
+    {
+      "name": "link có khoảng trắng thừa",
+      "input": "  https://www.facebook.com/reel/5555666677778888  ",
+      "expectedId": "5555666677778888",
+      "expectedKind": "reel",
+      "expectedResolvedBy": "url"
+    }
+  ],
+  "multiUrlText": "Link 1 https://www.facebook.com/watch/?v=1234567890123456 và link 2 https://fb.watch/xyz789/ hết",
+  "expectedMultiUrlCount": 2
+}
