@@ -143,6 +143,38 @@ rồi chuyển vào app ở `#/share`.
 
 ---
 
+## Phát hiện bản mới khi có commit mới
+
+Mỗi lần build, `scripts/gen-precache.mjs` làm ba việc:
+
+1. Chọn **phiên bản** của bản build: là commit SHA rút gọn khi chạy trên CI (`GITHUB_SHA`),
+   hoặc hash hash-nội-dung của `dist` khi build tay.
+2. Sinh `dist/version.json` chứa `version`, `commit`, `builtAt`, `content`.
+3. Chèn phiên bản vào `dist/index.html` qua ba thẻ `<meta name="fbr-version|fbr-commit|fbr-built">`.
+
+Trang đang chạy đọc phiên bản của chính nó từ thẻ meta rồi so với máy chủ. Có ba kênh phát hiện:
+
+| Kênh | Cách hoạt động |
+| --- | --- |
+| `version.json` | `fetch` với `cache: 'no-store'` mỗi 15 phút, khi bạn quay lại tab, và khi bấm **Kiểm tra cập nhật**. Hoạt động cả khi không có service worker. |
+| Service worker đang điều khiển trang | Trang hỏi SW phiên bản của nó (`FBR_GET_VERSION`); lệch với thẻ meta nghĩa là asset đang cũ. |
+| Service worker vừa cài xong | `updatefound` → `installed` khi có `sw.js` mới (browser tự kiểm tra khi điều hướng). |
+
+Khi phát hiện lệch phiên bản, một thanh thông báo hiện phía trên thanh điều hướng:
+
+> Đã có bản mới `abc1234` (18/10/2026). Tải lại để cập nhật. — **[Cập nhật] [Để sau]**
+
+App **không tự tải lại**: người dùng có thể đang nhập dở thời gian của một video. Bấm **Cập nhật**
+sẽ yêu cầu service worker mới tiếp quản (`FBR_SKIP_WAITING`), đợi `controllerchange` rồi tải lại.
+
+`version.json` không được precache và service worker luôn lấy nó trực tiếp từ mạng — nếu lấy từ cache
+thì sẽ không bao giờ thấy commit mới. Đây là request cùng origin, không gửi dữ liệu của bạn đi đâu.
+
+Kiểm chứng: mở tab **Cài đặt** → khối **Phiên bản** hiển thị bản đang chạy; tab **Chẩn đoán** ghi lại
+sự kiện `app_version`, `update_check`, `sw_updatefound`, `sw_controllerchange`.
+
+---
+
 ## Kiểm chứng trên máy thật
 
 Đây là phần quan trọng nhất và **không thể thay thế bằng test tự động**: không có test nào trong CI
@@ -154,6 +186,9 @@ xác nhận được kênh 1 và kênh 2 chạy trên điện thoại của bạ
 4. Bấm **▶ Xem tiếp** trên một card, xem vài phút trong app, quay lại → phải thấy `session_returned` và
    hộp thoại xác nhận.
 5. Nếu một kênh không chạy: bấm **Tải log .json** và gửi lại kèm mô tả.
+6. Kiểm chứng phát hiện bản mới: mở webapp trên máy, sau đó push một commit mới lên `main` và đợi
+   workflow xanh. Trong vòng 15 phút (hoặc sau khi chuyển tab quay lại, hoặc bấm **Kiểm tra cập nhật**
+   trong **Cài đặt**) thanh "Đã có bản mới" phải hiện ra.
 
 Nhật ký này là bằng chứng duy nhất. Không có nó thì không thể khẳng định kênh nào đang hoạt động.
 

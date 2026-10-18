@@ -17,6 +17,8 @@ import { inferKind, normalizeVideoId } from './video/videoId';
 import { launchInFacebook } from './video/deepLink';
 import { clear, el, openSheet, toast } from './utils/dom';
 import { createTimeField } from './ui/timeField';
+import { createUpdateBanner } from './ui/updateBanner';
+import { UpdateWatcher, readBuildVersion, type CheckResult } from './pwa/update';
 
 export interface Ctx {
   repo: VideoRepo;
@@ -25,6 +27,10 @@ export interface Ctx {
   navigate(route: string): void;
   refresh(): void;
   startWatch(video: VideoProgress, mode?: 'deep' | 'http'): void;
+  /** Phiên bản build đang chạy (xem scripts/gen-precache.mjs). */
+  readonly version: string;
+  /** Kiểm tra thủ công xem máy chủ có bản mới hơn không. */
+  checkForUpdates(): Promise<CheckResult>;
 }
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -54,16 +60,32 @@ export function parseRoute(hash: string): ParsedRoute {
 export class App {
   readonly ctx: Ctx;
   private readonly shell: Shell;
+  private readonly updates: UpdateWatcher;
   private rendering = false;
 
   constructor(root: HTMLElement, repo: VideoRepo) {
     this.shell = createShell(root);
     const probe = new ProbeLog();
+    const local = readBuildVersion();
+
+    const banner = createUpdateBanner(() => this.updates.apply());
+    this.shell.root.prepend(banner.node);
+
+    this.updates = new UpdateWatcher({
+      baseUrl: import.meta.env.BASE_URL,
+      localVersion: local.version,
+      onUpdateAvailable: (info) => banner.show(info),
+      onResult: (result, info) =>
+        probe.log('update_check', { result, remote: info ? info.version : '' }),
+      log: (event, data) => probe.log(event, data),
+    });
 
     this.ctx = {
       repo,
       probe,
       now: () => Date.now(),
+      version: local.version,
+      checkForUpdates: () => this.updates.check(),
       navigate: (route: string) => {
         const next = `#${route.startsWith('/') ? route : `/${route}`}`;
         if (window.location.hash === next) void this.render();
@@ -84,6 +106,8 @@ export class App {
     });
 
     probe.log('app_start', { hash: window.location.hash, search: window.location.search });
+    probe.log('app_version', { version: local.version, commit: local.commit ?? '', built: local.builtAt ?? '' });
+    this.updates.start();
   }
 
   async start(): Promise<void> {

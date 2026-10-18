@@ -924,6 +924,41 @@ body {
   transform: translateY(6px);
 }
 
+/* ---------- thanh thông báo có bản mới ---------- */
+
+.updatebar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + 10px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(680px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.updatebar[hidden] {
+  display: none;
+}
+
+.updatebar__text {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.updatebar__actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+
 /* ---------- responsive ---------- */
 
 @media (min-width: 640px) {
@@ -975,6 +1010,11 @@ body {
     gap: 10px;
     padding: 0 12px;
     font-size: 0.86rem;
+  }
+
+  /* Ở màn hình lớn thanh điều hướng nằm trên cùng, nên thông báo bám đáy trang. */
+  .updatebar {
+    bottom: 12px;
   }
 }
 

@@ -3,6 +3,7 @@ import { el, clear, toast, downloadText, copyText, confirmAction } from '../util
 import { serializeCsv, serializeFbrExport } from '../import/fbrJson';
 import { formatNumber } from '../utils/format';
 import { probeHost } from './probeScreen';
+import type { CheckResult } from '../pwa/update';
 
 export type ThemeChoice = 'auto' | 'light' | 'dark';
 export const THEME_KEY = 'fbr:theme';
@@ -222,11 +223,50 @@ export async function renderSettings(container: HTMLElement, ctx: Ctx): Promise<
     el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Chủ đề' }), themeSelect]),
   ]);
 
+  const versionStatus = el('p', { class: 'hint', text: `Bản đang chạy: ${ctx.version}` });
+  const checkButton = el('button', {
+    class: 'btn',
+    text: 'Kiểm tra cập nhật',
+    attrs: { type: 'button' },
+    on: {
+      click: () => {
+        void (async () => {
+          checkButton.setAttribute('disabled', '');
+          versionStatus.textContent = `Bản đang chạy: ${ctx.version}. Đang kiểm tra…`;
+          const result = await ctx.checkForUpdates();
+          checkButton.removeAttribute('disabled');
+          const messages: Record<CheckResult, string> = {
+            updated: 'Có bản mới — bấm “Cập nhật” ở thanh thông báo dưới màn hình.',
+            current: 'Bạn đang dùng bản mới nhất.',
+            error: 'Không kiểm tra được (có thể đang offline hoặc thiếu version.json).',
+            disabled: 'Bản dev không kiểm tra phiên bản.',
+            busy: 'Đang kiểm tra…',
+          };
+          versionStatus.textContent = `Bản đang chạy: ${ctx.version}. ${messages[result]}`;
+          toast(messages[result], result === 'error' ? 'error' : 'success');
+        })();
+      },
+    },
+  });
+
+  const versionPanel = el('section', { class: 'panel' }, [
+    el('h3', { class: 'panel__title', text: 'Phiên bản' }),
+    el('p', {
+      class: 'hint',
+      text:
+        'Webapp tự kiểm tra bản mới mỗi 15 phút, khi bạn quay lại tab và khi có commit mới được triển khai. ' +
+        'Khi đó một thanh thông báo xuất hiện ở dưới màn hình, không tự tải lại để bạn không mất phần đang nhập.',
+    }),
+    versionStatus,
+    el('div', { class: 'panel__actions' }, [checkButton]),
+  ]);
+
   container.appendChild(el('h2', { class: 'section-title', text: 'Cài đặt' }));
   container.appendChild(themePanel);
   container.appendChild(dataPanel);
   container.appendChild(probeHost(ctx));
   container.appendChild(syncPanel);
+  container.appendChild(versionPanel);
   container.appendChild(dangerPanel);
   container.appendChild(aboutPanel);
 }

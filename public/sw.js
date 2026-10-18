@@ -39,6 +39,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/* Giao thức với trang:
+ *   FBR_SKIP_WAITING  -> bản mới tiếp quản ngay (trang sẽ tự tải lại)
+ *   FBR_GET_VERSION   -> trả về VERSION của service worker đang chạy, để trang
+ *                        so với phiên bản build của chính nó.
+ */
+self.addEventListener('message', (event) => {
+  const data = event.data || {};
+  if (data.type === 'FBR_SKIP_WAITING') {
+    void self.skipWaiting();
+    return;
+  }
+  if (data.type === 'FBR_GET_VERSION') {
+    const payload = { type: 'FBR_VERSION', version: VERSION };
+    const port = event.ports && event.ports[0];
+    if (port) port.postMessage(payload);
+    else if (event.source && typeof event.source.postMessage === 'function') {
+      event.source.postMessage(payload);
+    }
+  }
+});
+
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
@@ -90,6 +111,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   // Không đụng vào request khác origin (ví dụ ảnh thumbnail Facebook).
   if (url.origin !== self.location.origin) return;
+
+  // version.json phải luôn là bản mới nhất, không bao giờ lấy từ cache —
+  // nếu không thì không phát hiện được commit mới.
+  if (url.pathname.endsWith('/version.json')) {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
+    return;
+  }
 
   if (url.pathname.startsWith('/fbr/assets/')) {
     event.respondWith(staleWhileRevalidate(request));

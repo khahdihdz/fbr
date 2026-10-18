@@ -27,7 +27,10 @@ export function renderProbePanel(ctx: Ctx): HTMLElement {
   const envList = el(
     'ul',
     { class: 'facts' },
-    Object.entries(env).map(([key, value]) => el('li', { text: `${key}: ${value}` })),
+    [
+      el('li', { text: `version: ${ctx.version}` }),
+      ...Object.entries(env).map(([key, value]) => el('li', { text: `${key}: ${value}` })),
+    ],
   );
 
   const logList = entries.length
