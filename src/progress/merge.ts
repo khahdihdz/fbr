@@ -54,6 +54,27 @@ export function createVideoProgress(input: CreateVideoInput): VideoProgress {
   return video;
 }
 
+/**
+ * Đánh dấu đã xem xong một cách nhất quán: `percent` luôn là 100.
+ *
+ * Trước đây chỗ gọi tự đặt `completed = true` mà quên `percent`, dẫn tới bản ghi
+ * hiện nhãn "Đã xem xong" nhưng thanh tiến trình vẫn 0%.
+ */
+export function markCompleted(video: VideoProgress, at: number): VideoProgress {
+  const durationSec = Math.max(0, video.durationSec);
+  const positionSec = durationSec > 0 ? durationSec : Math.max(0, video.positionSec);
+  return {
+    ...video,
+    durationSec,
+    positionSec,
+    percent: 100,
+    completed: true,
+    needsReview: durationSec <= 0 ? true : video.needsReview,
+    totalWatchedSec: Math.max(video.totalWatchedSec, positionSec),
+    lastWatchedAt: at,
+  };
+}
+
 function cloneHistory(entry: VideoProgress['history']): NonNullable<VideoProgress['history']> {
   const list = entry ?? [];
   return list.slice(-HISTORY_LIMIT);

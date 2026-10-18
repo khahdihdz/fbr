@@ -45,7 +45,10 @@ export function lastNKeys(now: number, n: number): string[] {
 
 /**
  * Phân tích chuỗi thời lượng thành số giây.
- * Chấp nhận "90", "12:34", "1:05:03". Trả về null nếu không hợp lệ.
+ * Chấp nhận "90", "12:34", "1:05:03".
+ *
+ * Phút và giây phải nhỏ hơn 60; "1:99" bị coi là không hợp lệ thay vì
+ * âm thầm hiểu thành 159 giây.
  */
 export function parseClockSec(input: string): number | null {
   const raw = input.trim();
@@ -53,12 +56,53 @@ export function parseClockSec(input: string): number | null {
   if (!/^\d{1,3}(:\d{1,2}){0,2}$/.test(raw)) return null;
   const parts = raw.split(':').map((p) => Number(p));
   if (parts.some((p) => !Number.isFinite(p))) return null;
+  for (let i = 1; i < parts.length; i += 1) {
+    const part = parts[i];
+    if (part === undefined || part > 59) return null;
+  }
   let seconds = 0;
   for (const part of parts) {
     seconds = seconds * 60 + part;
   }
   if (!Number.isFinite(seconds) || seconds < 0) return null;
   return seconds;
+}
+
+/**
+ * Phân tích chuỗi thời lượng "dễ tính" mà người dùng hay gõ:
+ * "90", "3:42", "1:05:03", "1h5m3s", "1h 5m", "45m", "30s".
+ * Trả về null nếu không hiểu được.
+ */
+export function parseLooseDuration(input: string): number | null {
+  const raw = input.trim().toLowerCase();
+  if (!raw) return null;
+
+  if (/^\d{1,3}(:\d{1,2}){0,2}$/.test(raw)) return parseClockSec(raw);
+
+  const match = /^(?:(\d{1,4})\s*h)?\s*(?:(\d{1,3})\s*m)?\s*(?:(\d{1,3})\s*s)?$/.exec(raw);
+  if (!match) return null;
+  const hours = match[1] !== undefined ? Number(match[1]) : null;
+  const minutes = match[2] !== undefined ? Number(match[2]) : null;
+  const seconds = match[3] !== undefined ? Number(match[3]) : null;
+  if (hours === null && minutes === null && seconds === null) return null;
+  if ((minutes ?? 0) > 59 || (seconds ?? 0) > 59) return null;
+  return (hours ?? 0) * 3600 + (minutes ?? 0) * 60 + (seconds ?? 0);
+}
+
+export interface TimeParts {
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+/** Tách tổng số giây thành giờ/phút/giây để hiển thị trong ô nhập. */
+export function splitSeconds(totalSec: number): TimeParts {
+  const safe = Number.isFinite(totalSec) && totalSec > 0 ? Math.floor(totalSec) : 0;
+  return {
+    hours: Math.floor(safe / 3600),
+    minutes: Math.floor((safe % 3600) / 60),
+    seconds: safe % 60,
+  };
 }
 
 /** Định dạng số giây thành h:mm:ss hoặc m:ss. */

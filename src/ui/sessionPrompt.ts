@@ -3,8 +3,9 @@ import type { VideoProgress } from '../types';
 import { estimateFromSession } from '../progress/estimate';
 import { applyEdit } from './editors';
 import { el, openSheet, toast } from '../utils/dom';
-import { formatClockSec, parseClockSec } from '../utils/time';
+import { formatClockSec } from '../utils/time';
 import { formatDuration } from '../utils/format';
+import { createTimeField } from './timeField';
 import type { PendingSession } from '../progress/session';
 
 /**
@@ -32,33 +33,29 @@ export function promptForSession(
       )} → vị trí khoảng ${formatClockSec(estimate.positionSec)} / ${formatDuration(video.durationSec)}.`
     : explainFailure(estimate.reason);
 
-  const positionInput = el('input', {
-    class: 'input',
-    attrs: {
-      type: 'text',
-      inputmode: 'numeric',
-      value: String(Math.round(estimate.positionSec)),
-      'aria-label': 'Vị trí thực tế',
-    },
-  }) as HTMLInputElement;
+  const positionField = createTimeField({
+    legend: 'Vị trí đang xem',
+    value: estimate.positionSec,
+    maxSeconds: video.durationSec > 0 ? video.durationSec : undefined,
+    showSlider: video.durationSec > 0,
+    hint: 'Nhập giờ / phút / giây. Có thể dán thẳng "1:05:03" vào bất kỳ ô nào.',
+  });
 
-  const durationInput = el('input', {
-    class: 'input',
-    attrs: {
-      type: 'text',
-      inputmode: 'numeric',
-      placeholder: 'm:ss hoặc giây',
-      value: video.durationSec > 0 ? String(Math.round(video.durationSec)) : '',
-      'aria-label': 'Thời lượng',
+  const durationField = createTimeField({
+    legend: 'Thời lượng video',
+    value: video.durationSec,
+    hint: 'Nếu chưa biết, bản ghi sẽ nằm trong tab "Cần rà lại".',
+    onChange: (seconds) => {
+      positionField.setMaxSeconds(seconds > 0 ? seconds : undefined);
     },
-  }) as HTMLInputElement;
+  });
 
-  const applyEstimate = async (close: () => void, positionSec: number): Promise<void> => {
-    const next = applyEdit(video, { positionSec, durationSec: video.durationSec }, ctx.now());
+  const applyEstimate = async (close: () => void, positionSec: number, durationSec: number): Promise<void> => {
+    const next = applyEdit(video, { positionSec, durationSec }, ctx.now());
     next.source = 'session_estimate';
     next.confidence = 'low';
     next.watchCount = video.watchCount + 1;
-    next.needsReview = estimate.capped || video.durationSec <= 0;
+    next.needsReview = estimate.capped || durationSec <= 0;
     await ctx.repo.put(next);
     ctx.probe.log('session_estimate_applied', {
       id: video.id,
@@ -71,20 +68,30 @@ export function promptForSession(
     ctx.refresh();
   };
 
+  const guard = (): boolean => {
+    const invalid = [positionField, durationField].find((field) => !field.isValid());
+    if (invalid) {
+      toast(invalid.message() ?? 'Thời gian không hợp lệ.', 'error');
+      return false;
+    }
+    return true;
+  };
+
   const actions = [
     {
       label: estimate.ok ? 'Đúng, lưu lại' : 'Lưu vị trí',
       kind: 'primary' as const,
       onClick: (close: () => void) => {
-        const parsed = parseClockSec(positionInput.value);
-        void applyEstimate(close, parsed ?? estimate.positionSec);
+        if (!guard()) return;
+        void applyEstimate(close, positionField.getSeconds(), durationField.getSeconds());
       },
     },
     {
       label: 'Đã xem xong',
       kind: 'ghost' as const,
       onClick: (close: () => void) => {
-        const duration = parseClockSec(durationInput.value) ?? video.durationSec;
+        if (!guard()) return;
+        const duration = durationField.getSeconds() > 0 ? durationField.getSeconds() : video.durationSec;
         void (async () => {
           const marked = applyEdit(video, { completed: true, durationSec: duration }, ctx.now());
           await ctx.repo.put(marked);
@@ -109,14 +116,8 @@ export function promptForSession(
     description,
     body: [
       el('p', { class: 'hint', text: video.title }),
-      el('label', { class: 'field' }, [
-        el('span', { class: 'field__label', text: 'Vị trí đang xem (giây)' }),
-        positionInput,
-      ]),
-      el('label', { class: 'field' }, [
-        el('span', { class: 'field__label', text: 'Thời lượng (giây) — bắt buộc nếu chưa biết' }),
-        durationInput,
-      ]),
+      positionField.node,
+      durationField.node,
       el('p', {
         class: 'hint',
         text: 'Webapp không đọc được tiến trình từ app Facebook. Con số trên là ước lượng theo thời gian bạn vừa rời đi.',

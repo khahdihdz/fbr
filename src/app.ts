@@ -1,6 +1,6 @@
 import type { VideoProgress } from './types';
 import type { VideoRepo } from './db/repo';
-import { createVideoProgress } from './progress/merge';
+import { createVideoProgress, markCompleted } from './progress/merge';
 import { beginSession, endSession, readSession } from './progress/session';
 import { ProbeLog } from './ui/probe';
 import { createShell, type Shell } from './ui/layout';
@@ -16,7 +16,7 @@ import { consumePendingShare, readShareFromLocation, refFromShare } from './shar
 import { inferKind, normalizeVideoId } from './video/videoId';
 import { launchInFacebook } from './video/deepLink';
 import { clear, el, openSheet, toast } from './utils/dom';
-import { parseClockSec } from './utils/time';
+import { createTimeField } from './ui/timeField';
 
 export interface Ctx {
   repo: VideoRepo;
@@ -285,42 +285,50 @@ export class App {
       tags: ['share'],
     });
 
-    const durationInput = el('input', {
-      class: 'input',
-      attrs: { type: 'text', inputmode: 'numeric', placeholder: 'm:ss hoặc giây (có thể bỏ trống)', 'aria-label': 'Thời lượng' },
-    }) as HTMLInputElement;
-    const positionInput = el('input', {
-      class: 'input',
-      attrs: { type: 'text', inputmode: 'numeric', placeholder: 'vị trí hiện tại (giây)', 'aria-label': 'Vị trí' },
-    }) as HTMLInputElement;
+    const positionField = createTimeField({
+      legend: 'Đang xem tới',
+      hint: 'Nhập giờ / phút / giây. Có thể dán thẳng "1:05:03" vào bất kỳ ô nào.',
+    });
+    const durationField = createTimeField({
+      legend: 'Thời lượng video',
+      hint: 'Bỏ trống thời lượng thì video sẽ nằm trong tab "Cần rà lại" cho tới khi bạn điền.',
+      onChange: (seconds) => {
+        positionField.setMaxSeconds(seconds > 0 ? seconds : undefined);
+      },
+    });
+
+    const guard = (): boolean => {
+      const invalid = [durationField, positionField].find((field) => !field.isValid());
+      if (invalid) {
+        toast(invalid.message() ?? 'Thời gian không hợp lệ.', 'error');
+        return false;
+      }
+      return true;
+    };
 
     openSheet({
       title: 'Đã nhận video',
       description: video.title,
       body: [
         el('p', { class: 'hint', text: video.url }),
-        el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Thời lượng' }), durationInput]),
-        el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Đang xem tới' }), positionInput]),
-        el('p', {
-          class: 'hint',
-          text: 'Bỏ trống thời lượng thì video sẽ nằm trong tab "Cần rà lại" cho tới khi bạn điền.',
-        }),
+        durationField.node,
+        positionField.node,
       ],
       actions: [
         {
           label: 'Lưu (đang xem dở)',
           kind: 'primary',
           onClick: (close) => {
+            if (!guard()) return;
             void (async () => {
-              const duration = parseClockSec(durationInput.value) ?? 0;
-              const position = parseClockSec(positionInput.value) ?? 0;
+              const duration = durationField.getSeconds();
               const saved = createVideoProgress({
                 ref,
                 source: 'share_target',
                 now,
                 title: share.title || undefined,
                 durationSec: duration,
-                positionSec: position,
+                positionSec: positionField.getSeconds(),
                 tags: ['share'],
                 needsReview: duration <= 0,
               });
@@ -347,20 +355,19 @@ export class App {
           label: 'Đã xem xong',
           kind: 'ghost',
           onClick: (close) => {
+            if (!guard()) return;
             void (async () => {
-              const duration = parseClockSec(durationInput.value) ?? 0;
+              const duration = durationField.getSeconds();
               const saved = createVideoProgress({
                 ref,
                 source: 'share_target',
                 now,
                 title: share.title || undefined,
                 durationSec: duration,
-                positionSec: duration,
                 tags: ['share'],
                 needsReview: duration <= 0,
               });
-              saved.completed = true;
-              await this.ctx.repo.put(saved);
+              await this.ctx.repo.put(markCompleted(saved, now));
               close();
               toast('Đã đánh dấu xem xong.', 'success');
               this.ctx.navigate('/');

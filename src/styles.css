@@ -293,6 +293,80 @@ body {
   accent-color: var(--accent);
 }
 
+/* ---------- time field (giờ / phút / giây) ---------- */
+
+.timefield {
+  margin: 12px 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+}
+
+.timefield__legend {
+  padding: 0 4px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.timefield__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timefield__part {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.timefield__input {
+  padding-right: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.timefield__unit {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  pointer-events: none;
+}
+
+.timefield__sep {
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.timefield__echo {
+  margin: 8px 0 0;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timefield__echo--notice {
+  color: var(--warn);
+}
+
+.timefield__echo--error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.timefield__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .switch {
   display: flex;
   align-items: center;

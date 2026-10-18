@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clamp, dayKey, formatClockSec, lastNKeys, parseClockSec, round1, shiftDayKey } from './time';
+import { clamp, dayKey, formatClockSec, lastNKeys, parseClockSec, parseLooseDuration, round1, shiftDayKey, splitSeconds } from './time';
 
 describe('clamp', () => {
   it('kẹp trong khoảng', () => {
@@ -52,6 +52,53 @@ describe('parseClockSec', () => {
 
   it('xử lý 0', () => {
     expect(parseClockSec('0')).toBe(0);
+  });
+
+  it('từ chối phút hoặc giây vượt 59 thay vì hiểu nhầm', () => {
+    expect(parseClockSec('1:99')).toBeNull();
+    expect(parseClockSec('1:60')).toBeNull();
+    expect(parseClockSec('0:99:00')).toBeNull();
+    expect(parseClockSec('1:59')).toBe(119);
+    expect(parseClockSec('1:59:59')).toBe(7199);
+  });
+});
+
+describe('parseLooseDuration', () => {
+  it('đọc số giây trần', () => {
+    expect(parseLooseDuration('90')).toBe(90);
+  });
+
+  it('đọc dạng phút:giây và giờ:phút:giây', () => {
+    expect(parseLooseDuration('3:42')).toBe(222);
+    expect(parseLooseDuration('1:05:03')).toBe(3903);
+  });
+
+  it('đọc dạng có đơn vị h/m/s', () => {
+    expect(parseLooseDuration('1h5m3s')).toBe(3903);
+    expect(parseLooseDuration('1h 5m')).toBe(3900);
+    expect(parseLooseDuration('45m')).toBe(2700);
+    expect(parseLooseDuration('30s')).toBe(30);
+    expect(parseLooseDuration('2 h')).toBe(7200);
+  });
+
+  it('trả null với chuỗi không hiểu được', () => {
+    expect(parseLooseDuration('')).toBeNull();
+    expect(parseLooseDuration('abc')).toBeNull();
+    expect(parseLooseDuration('1h99m')).toBeNull();
+  });
+});
+
+describe('splitSeconds', () => {
+  it('tách đúng giờ/phút/giây', () => {
+    expect(splitSeconds(3903)).toEqual({ hours: 1, minutes: 5, seconds: 3 });
+    expect(splitSeconds(59)).toEqual({ hours: 0, minutes: 0, seconds: 59 });
+    expect(splitSeconds(3600)).toEqual({ hours: 1, minutes: 0, seconds: 0 });
+  });
+
+  it('an toàn với giá trị 0, âm và NaN', () => {
+    expect(splitSeconds(0)).toEqual({ hours: 0, minutes: 0, seconds: 0 });
+    expect(splitSeconds(-10)).toEqual({ hours: 0, minutes: 0, seconds: 0 });
+    expect(splitSeconds(Number.NaN)).toEqual({ hours: 0, minutes: 0, seconds: 0 });
   });
 });
 

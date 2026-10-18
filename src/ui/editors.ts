@@ -1,8 +1,10 @@
 import type { Ctx } from '../app';
 import { HISTORY_LIMIT, type HistoryEntry, type VideoProgress } from '../types';
 import { computePercent, isCompleted } from '../progress/percent';
-import { parseClockSec } from '../utils/time';
+import { isPlaceholderTitle } from '../progress/confidence';
+import { round1 } from '../utils/time';
 import { el, openSheet, toast, confirmAction } from '../utils/dom';
+import { createTimeField } from './timeField';
 
 export interface EditChanges {
   title?: string;
@@ -46,27 +48,32 @@ export function applyEdit(
   );
   if (durationSec > 0) positionSec = Math.min(positionSec, durationSec);
 
-  let completed = changes.completed ?? false;
-  if (changes.completed === undefined) {
+  let completed: boolean;
+  if (changes.completed === true) {
+    completed = true;
+    if (durationSec > 0) positionSec = durationSec;
+  } else if (changes.completed === false) {
+    completed = false;
+    if (durationSec > 0 && positionSec >= durationSec) positionSec = round1(durationSec * 0.9);
+  } else {
     completed = durationSec > 0 ? isCompleted(computePercent(positionSec, durationSec)) : video.completed;
   }
-  if (changes.completed === true && durationSec > 0) positionSec = durationSec;
-  if (changes.completed === false) {
-    completed = false;
-    if (durationSec > 0 && positionSec >= durationSec) positionSec = durationSec * 0.9;
-  }
 
-  const percent = computePercent(positionSec, durationSec);
+  const percent = completed ? 100 : computePercent(positionSec, durationSec);
+  const title = changes.title !== undefined ? changes.title : video.title;
+
   const next: VideoProgress = {
     ...video,
-    title: changes.title !== undefined ? changes.title : video.title,
+    title,
     durationSec,
     positionSec,
-    percent: completed && durationSec === 0 ? video.percent : percent,
+    percent,
     completed,
     source: 'manual',
     confidence: 'medium',
-    needsReview: durationSec <= 0,
+    // Sau khi sửa tay, chỉ còn đáng rà lại khi thiếu thời lượng, tiêu đề vẫn là
+    // tiêu đề tạm, hoặc không suy ra được ID thật.
+    needsReview: durationSec <= 0 || isPlaceholderTitle(title) || video.resolvedBy === 'unknown',
     lastWatchedAt: now,
     totalWatchedSec: Math.max(video.totalWatchedSec, positionSec),
     history: pushHistory(video, changes, now),
@@ -94,70 +101,25 @@ export function openVideoEditor(video: VideoProgress, ctx: Ctx): void {
     on: { input: (e) => { state.title = (e.target as HTMLInputElement).value; } },
   }) as HTMLInputElement;
 
-  const durationInput = el('input', {
-    class: 'input',
-    attrs: {
-      type: 'text',
-      inputmode: 'numeric',
-      placeholder: 'm:ss hoặc giây',
-      value: video.durationSec > 0 ? String(Math.round(video.durationSec)) : '',
-      'aria-label': 'Thời lượng',
+  const positionField = createTimeField({
+    legend: 'Vị trí đang xem',
+    value: video.positionSec,
+    maxSeconds: video.durationSec > 0 ? video.durationSec : undefined,
+    showSlider: video.durationSec > 0,
+    hint: 'Nhập giờ / phút / giây. Có thể dán thẳng "1:05:03" vào bất kỳ ô nào.',
+    onChange: (seconds) => {
+      state.positionSec = seconds;
     },
-    on: {
-      input: (e) => {
-        const parsed = parseClockSec((e.target as HTMLInputElement).value);
-        state.durationSec = parsed ?? 0;
-        const max = parsed ?? 0;
-        slider.max = String(Math.max(1, max));
-        updatePositionLabel();
-      },
-    },
-  }) as HTMLInputElement;
+  });
 
-  const positionInput = el('input', {
-    class: 'input',
-    attrs: {
-      type: 'text',
-      inputmode: 'numeric',
-      placeholder: 'm:ss hoặc giây',
-      value: String(Math.round(video.positionSec)),
-      'aria-label': 'Vị trí đang xem',
+  const durationField = createTimeField({
+    legend: 'Thời lượng video',
+    value: video.durationSec,
+    hint: 'Bỏ trống nếu chưa biết — bản ghi sẽ nằm trong tab "Cần rà lại".',
+    onChange: (seconds) => {
+      state.durationSec = seconds;
+      positionField.setMaxSeconds(seconds > 0 ? seconds : undefined);
     },
-    on: {
-      input: (e) => {
-        const parsed = parseClockSec((e.target as HTMLInputElement).value);
-        state.positionSec = parsed ?? 0;
-        slider.value = String(state.positionSec);
-        updatePositionLabel();
-      },
-    },
-  }) as HTMLInputElement;
-
-  const slider = el('input', {
-    class: 'slider',
-    attrs: {
-      type: 'range',
-      min: '0',
-      max: String(Math.max(1, video.durationSec)),
-      value: String(video.positionSec),
-      step: '1',
-      'aria-label': 'Kéo để chọn vị trí',
-    },
-  }) as HTMLInputElement;
-
-  const positionLabel = el('span', { class: 'hint' });
-  const updatePositionLabel = (): void => {
-    const total = state.durationSec ?? video.durationSec;
-    const pos = state.positionSec ?? video.positionSec;
-    const pct = computePercent(pos, total);
-    positionLabel.textContent =
-      total > 0 ? `${Math.round(pos)}s / ${Math.round(total)}s (${pct}%)` : `${Math.round(pos)}s (chưa biết thời lượng)`;
-  };
-
-  slider.addEventListener('input', () => {
-    state.positionSec = Number(slider.value);
-    positionInput.value = slider.value;
-    updatePositionLabel();
   });
 
   const noteInput = el('textarea', {
@@ -185,12 +147,21 @@ export function openVideoEditor(video: VideoProgress, ctx: Ctx): void {
     },
   }) as HTMLInputElement;
 
-  updatePositionLabel();
-
   const save = async (close: () => void): Promise<void> => {
+    const fields = [positionField, durationField];
+    const invalid = fields.find((field) => !field.isValid());
+    if (invalid) {
+      toast(invalid.message() ?? 'Thời gian không hợp lệ.', 'error');
+      return;
+    }
     const next = applyEdit(video, state, ctx.now());
     await ctx.repo.put(next);
-    ctx.probe.log('manual_edit', { id: video.id, fields: Object.keys(state) });
+    ctx.probe.log('manual_edit', {
+      id: video.id,
+      fields: Object.keys(state),
+      durationSec: next.durationSec,
+      positionSec: next.positionSec,
+    });
     close();
     toast('Đã lưu thay đổi.', 'success');
     ctx.refresh();
@@ -201,16 +172,8 @@ export function openVideoEditor(video: VideoProgress, ctx: Ctx): void {
     description: video.url || video.id,
     body: [
       el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Tiêu đề' }), titleInput]),
-      el('label', { class: 'field' }, [
-        el('span', { class: 'field__label', text: 'Thời lượng (giây)' }),
-        durationInput,
-      ]),
-      el('label', { class: 'field' }, [
-        el('span', { class: 'field__label', text: 'Vị trí đang xem' }),
-        slider,
-        positionInput,
-        positionLabel,
-      ]),
+      durationField.node,
+      positionField.node,
       el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Ghi chú' }), noteInput]),
       el('label', { class: 'field' }, [el('span', { class: 'field__label', text: 'Tag' }), tagsInput]),
     ],
@@ -221,6 +184,8 @@ export function openVideoEditor(video: VideoProgress, ctx: Ctx): void {
         kind: 'ghost',
         onClick: (close) => {
           state.completed = true;
+          state.durationSec = durationField.getSeconds();
+          state.positionSec = positionField.getSeconds();
           void save(close);
         },
       },

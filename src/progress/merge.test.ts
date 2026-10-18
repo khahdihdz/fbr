@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { VideoProgress } from '../types';
-import { createVideoProgress, mergeMany, mergeVideo, pickBetter } from './merge';
+import { createVideoProgress, markCompleted, mergeMany, mergeVideo, pickBetter } from './merge';
 import { normalizeVideoId } from '../video/videoId';
 
 const NOW = 1_700_000_000_000;
@@ -156,6 +156,31 @@ describe('mergeVideo', () => {
     const incoming = make();
     const result = mergeVideo(existing, incoming);
     expect(result.video.tags).toBeUndefined();
+  });
+});
+
+describe('markCompleted', () => {
+  it('đặt percent 100 và kéo vị trí tới cuối video', () => {
+    const video = make({ durationSec: 100, positionSec: 20, percent: 20, completed: false });
+    const done = markCompleted(video, NOW + 1000);
+    expect(done.completed).toBe(true);
+    expect(done.percent).toBe(100);
+    expect(done.positionSec).toBe(100);
+    expect(done.totalWatchedSec).toBe(100);
+    expect(done.lastWatchedAt).toBe(NOW + 1000);
+  });
+
+  it('giữ needsReview khi thiếu thời lượng nhưng vẫn đánh dấu 100%', () => {
+    const video = make({ durationSec: 0, positionSec: 0, percent: 0, completed: false, needsReview: true });
+    const done = markCompleted(video, NOW);
+    expect(done.completed).toBe(true);
+    expect(done.percent).toBe(100);
+    expect(done.needsReview).toBe(true);
+  });
+
+  it('không hạ needsReview đang có', () => {
+    const video = make({ durationSec: 100, needsReview: true });
+    expect(markCompleted(video, NOW).needsReview).toBe(true);
   });
 });
 
