@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Đang chuyển tiếp…</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #0b1220;
+        color: #e8ecf6;
+        font: 16px/1.5 system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Đang chuyển tiếp nội dung chia sẻ…</p>
+    <script>
+      // GitHub Pages không có rewrite cho SPA, nên /fbr/share?url=... sẽ 404.
+      // Trang tĩnh này nhận tham số Web Share Target, cất vào sessionStorage rồi
+      // đưa người dùng vào app ở hash #/share.
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var payload = {
+            url: params.get('url') || '',
+            text: params.get('text') || '',
+            title: params.get('title') || '',
+            receivedAt: Date.now(),
+          };
+          if (payload.url || payload.text || payload.title) {
+            sessionStorage.setItem('fbr:share:pending', JSON.stringify(payload));
+          }
+        } catch (error) {
+          /* sessionStorage có thể bị chặn; app sẽ báo không có nội dung chia sẻ. */
+        }
+        window.location.replace('/fbr/#/share');
+      })();
+    </script>
+  </body>
+</html>

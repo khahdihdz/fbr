@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chính sách riêng tư · FB Watch Progress</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f7fb;
+        --fg: #14161c;
+        --soft: #5a6072;
+        --card: #fff;
+        --border: #d9dde8;
+        --accent: #1877f2;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b1220;
+          --fg: #e8ecf6;
+          --soft: #9aa6c0;
+          --card: #141c2e;
+          --border: #2a3550;
+          --accent: #4d94ff;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 26px 0 8px;
+      }
+      p,
+      li {
+        color: var(--soft);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      code {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Chính sách riêng tư</h1>
+      <p>Cập nhật lần cuối: khi bạn đang đọc dòng này.</p>
+
+      <div class="card">
+        <strong>Tóm tắt một câu:</strong> webapp không có server, không thu thập gì, và toàn bộ dữ liệu
+        nằm trong trình duyệt của bạn.
+      </div>
+
+      <h2>Dữ liệu được lưu ở đâu</h2>
+      <ul>
+        <li>Tiến trình video: IndexedDB, database tên <code>fbr</code>, trên đúng thiết bị bạn dùng.</li>
+        <li>Tuỳ chọn giao diện, bộ lọc, nhật ký chẩn đoán: <code>localStorage</code>.</li>
+        <li>Phiên “rời webapp để mở app Facebook”: <code>sessionStorage</code>, tự xoá khi đóng tab.</li>
+      </ul>
+
+      <h2>Dữ liệu không được thu thập</h2>
+      <ul>
+        <li>Không analytics, không telemetry, không mã theo dõi của bên thứ ba.</li>
+        <li>Không cookie, không tài khoản, không đăng nhập.</li>
+        <li>Không đọc danh bạ, vị trí, camera, microphone hay bất kỳ quyền hệ thống nào.</li>
+        <li>Không gọi API nội bộ của Facebook, không scraping, không tự động hoá thao tác.</li>
+      </ul>
+
+      <h2>Kết nối ra ngoài</h2>
+      <p>Chỉ có hai trường hợp webapp phát sinh request ra ngoài:</p>
+      <ol>
+        <li>
+          Ảnh thumbnail: webapp thử tải <code>https://graph.facebook.com/&lt;id&gt;/picture</code>. Nếu
+          thất bại, nó dùng ảnh thay thế nội bộ. Không có dữ liệu nào của bạn được gửi kèm.
+        </li>
+        <li>
+          Đồng bộ (mặc định <strong>tắt</strong>): nếu bạn tự cấu hình một endpoint và tự bật, dữ liệu
+          tiến trình mới được gửi tới đúng endpoint đó, kèm token do bạn nhập. Khi tắt, không có byte nào
+          rời khỏi thiết bị.
+        </li>
+      </ol>
+
+      <h2>Quyền kiểm soát của bạn</h2>
+      <ul>
+        <li>Xuất toàn bộ dữ liệu ra JSON hoặc CSV bất cứ lúc nào, ở tab Cài đặt.</li>
+        <li>Xoá toàn bộ dữ liệu bằng một nút, có xác nhận.</li>
+        <li>Xoá dữ liệu trình duyệt là đủ để xoá sạch mọi thứ webapp từng lưu.</li>
+      </ul>
+
+      <h2>Điều webapp này không làm được</h2>
+      <p>
+        Webapp không đọc được tiến trình phát video từ app Facebook. Mọi con số về vị trí xem đều đến từ
+        bạn hoặc từ file dữ liệu bạn tự tải về. Những bản ghi mang nhãn “Ước tính” là suy đoán theo thời
+        gian, không phải số liệu đo được.
+      </p>
+
+      <p><a href="./">← Về webapp</a> · <a href="./install.html">Hướng dẫn cài đặt</a></p>
+    </main>
+  </body>
+</html>

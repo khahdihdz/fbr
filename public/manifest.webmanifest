@@ -1,0 +1,54 @@
+{
+  "name": "FB Watch Progress",
+  "short_name": "FBProgress",
+  "description": "Theo dõi tiến trình xem video Facebook. Dữ liệu chỉ lưu trên máy bạn.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "/fbr/",
+  "scope": "/fbr/",
+  "id": "/fbr/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "theme_color": "#1877f2",
+  "background_color": "#0b1220",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/fbr/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fbr/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/fbr/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/fbr/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "shortcuts": [
+    {
+      "name": "Nhập dữ liệu",
+      "url": "/fbr/#/import"
+    },
+    {
+      "name": "Chẩn đoán",
+      "url": "/fbr/#/probe"
+    }
+  ]
+}

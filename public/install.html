@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1877f2" />
+    <title>Cài đặt · FB Watch Progress</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f7fb;
+        --fg: #14161c;
+        --soft: #5a6072;
+        --card: #fff;
+        --border: #d9dde8;
+        --accent: #1877f2;
+        --warn: #a16207;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b1220;
+          --fg: #e8ecf6;
+          --soft: #9aa6c0;
+          --card: #141c2e;
+          --border: #2a3550;
+          --accent: #4d94ff;
+          --warn: #fbbf24;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 16px 64px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 28px 0 8px;
+      }
+      p,
+      li {
+        color: var(--soft);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+      }
+      .warn {
+        border-left: 3px solid var(--warn);
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 16px;
+        margin: 4px 6px 4px 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      code {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.9em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Cài đặt &amp; giới hạn</h1>
+      <p>Đọc kỹ mục giới hạn trước, để bạn không kỳ vọng sai vào webapp này.</p>
+
+      <div class="card warn">
+        <strong>Điều quan trọng nhất:</strong> một trang web <em>không thể</em> tự đọc tiến trình phát video
+        từ app Facebook. Trình duyệt bị sandbox và không có API nào cho phép truy cập trạng thái player
+        của một app khác. Không có cách nào vượt qua giới hạn này bằng JavaScript.
+      </div>
+
+      <h2>Cách thu thập dữ liệu thực sự có</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Kênh</th>
+            <th>Mức tự động</th>
+            <th>Độ chính xác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chia sẻ link từ app Facebook vào webapp</td>
+            <td>Gần tự động (1 tap)</td>
+            <td>Biết link, chưa biết vị trí</td>
+          </tr>
+          <tr>
+            <td>Mở video rồi quay lại webapp</td>
+            <td>Gần tự động (1 tap xác nhận)</td>
+            <td>Ước lượng, có thể sai</td>
+          </tr>
+          <tr>
+            <td>Nhập file “Download your information”</td>
+            <td>Thủ công</td>
+            <td>Chính xác về danh sách, không có phút:giây</td>
+          </tr>
+          <tr>
+            <td>Dán link / nhập tay</td>
+            <td>Thủ công</td>
+            <td>Chính xác theo những gì bạn nhập</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Bước 1 — Cài webapp lên màn hình chính</h2>
+      <p>
+        Bắt buộc phải cài nếu bạn muốn dùng kênh <em>chia sẻ link</em>, vì Web Share Target chỉ hoạt động
+        với PWA đã được cài.
+      </p>
+      <ul>
+        <li><strong>Chrome / Edge trên Android:</strong> mở menu ⋮ → “Thêm vào Màn hình chính” → “Cài đặt”.</li>
+        <li><strong>Safari trên iOS:</strong> nút Chia sẻ → “Thêm vào Màn hình chính”.</li>
+        <li><strong>Chrome / Edge trên máy tính:</strong> biểu tượng cài đặt ⊕ trên thanh địa chỉ.</li>
+      </ul>
+      <a class="btn" href="./">Mở webapp</a>
+
+      <h2>Bước 2 — Dùng kênh chia sẻ</h2>
+      <ol>
+        <li>Trong app Facebook, tìm video đang xem → bấm <strong>Chia sẻ</strong>.</li>
+        <li>Chọn <strong>FBProgress</strong> trong danh sách ứng dụng.</li>
+        <li>Webapp sẽ hỏi bạn đang xem tới đâu. Điền thời lượng nếu biết, rồi lưu.</li>
+      </ol>
+      <div class="card warn">
+        Web Share Target hiện chỉ được hỗ trợ đầy đủ trên Chrome/Edge Android. Safari iOS chưa nhận
+        share vào PWA, nên trên iPhone bạn phải sao chép link rồi dán vào tab Nhập.
+      </div>
+
+      <h2>Bước 3 — Dùng kênh “mở video rồi quay lại”</h2>
+      <ol>
+        <li>Trên card video, bấm <strong>▶ Xem tiếp</strong>. Webapp ghi lại thời điểm bạn rời đi.</li>
+        <li>Xem video trong app Facebook như bình thường.</li>
+        <li>Quay lại webapp. Nó sẽ hỏi: “Ước lượng bạn đã xem tới … Đúng không?”</li>
+      </ol>
+      <p>
+        Con số đó là <strong>ước lượng</strong> dựa trên thời gian bạn vắng mặt, không phải dữ liệu đọc được
+        từ app Facebook. Vì vậy nó luôn hỏi lại và được gắn nhãn “Ước tính”.
+      </p>
+
+      <h2>Bước 4 — Nhập dữ liệu chính chủ của Facebook</h2>
+      <ol>
+        <li>Facebook → Cài đặt &amp; quyền riêng tư → Thông tin của bạn → <em>Tải thông tin của bạn</em>.</li>
+        <li>Chọn mục video đã xem, định dạng <strong>JSON</strong>, rồi yêu cầu tải.</li>
+        <li>Vào tab <strong>Nhập</strong> của webapp, chọn file JSON vừa nhận.</li>
+      </ol>
+      <p>
+        Định dạng export của Facebook thay đổi theo thời gian và theo ngôn ngữ. Webapp dò theo hình dạng
+        dữ liệu; nếu không nhận diện được, nó sẽ báo rõ và không nhập dữ liệu rác.
+      </p>
+
+      <h2>Quyền riêng tư</h2>
+      <p>
+        Không có server, không analytics, không telemetry. Toàn bộ dữ liệu nằm trong IndexedDB trên
+        thiết bị bạn đang dùng. Xem <a href="./privacy.html">chính sách riêng tư</a>.
+      </p>
+
+      <h2>Kiểm chứng trên máy bạn</h2>
+      <p>
+        Vào tab <strong>Chẩn đoán</strong> để xem nhật ký: sự kiện chia sẻ, sự kiện ước lượng, chế độ
+        hiển thị, user agent. Nếu một kênh không chạy, log sẽ cho biết chính xác nó dừng ở đâu.
+      </p>
+    </main>
+  </body>
+</html>
